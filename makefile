@@ -1,5 +1,8 @@
 CC = gcc
+AOC = aoc -v
+BOARD = pcie385n_d5
 HOST_TARGET = lcr
+TARGET = lcr_kernel
 HOST_SOURCES = src/main.c src/load_pgm.c src/util.c src/cg.c
 CL_SOURCES = src/cl_setup.c src/reconstruction_cl.c
 
@@ -20,7 +23,14 @@ host: bin/$(HOST_TARGET)
 
 c_only: 
 	mkdir -p bin
-	$(CC) $(SOURCES) -o $@ $(GSL_HEADERS) $(GSL_LDFLAGS) $(GSL_LDLIBS)
+	$(CC) $(SOURCES) -o bin/lcr_c $(GSL_HEADERS) $(GSL_LDFLAGS) $(GSL_LDLIBS)
+	
+simulation: bin/$(HOST_TARGET)
+	$(AOC) -march=emulator src/$(TARGET).cl --board $(BOARD)
+	bin/$(HOST_TARGET)
 
 clean:
+	rm -rf bin/$(TARGET)
 	rm -rf bin/$(HOST_TARGET)
+	rm -f bin/$(TARGET).aoco
+	rm -f bin/$(TARGET).aocx
