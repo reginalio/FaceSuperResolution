@@ -1,15 +1,26 @@
 CC = gcc
-TARGET = bin/lcr
-SOURCES = src/main.c src/load_pgm.c src/util.c src/cg.c
+HOST_TARGET = lcr
+HOST_SOURCES = src/main.c src/load_pgm.c src/util.c src/cg.c
+CL_SOURCES = src/cl_setup.c src/reconstruction_cl.c
 
 GSL_HEADERS = -I/mnt/applications/gsl/1.16/include
 GSL_LDFLAGS = -L/mnt/applications/gsl/1.16/lib
 GSL_LDLIBS = -lgsl -lgslcblas -lm
 
+AOCL_COMPILE_CONFIG = -I/mnt/applications/altera/aocl-sdk/host/include -I/mnt/applications/altera/aocl-sdk/board/nalla_pcie/include #$(aocl compile-config)
+AOCL_LDFLAGS = -L/mnt/applications/altera/aocl-sdk/board/nalla_pcie/linux64/lib -L/mnt/applications/altera/aocl-sdk/host/linux64/lib #$(aocl ldflags)
+AOCL_LDLIBS = -lalteracl -ldl -lacl_emulator_kernel_rt  -lalterahalmmd -lnalla_pcie_mmd -lelf -lrt -lstdc++ #$({aocl ldlibs)
 
-bin/lcr : 
+
+bin/$(HOST_TARGET) : 
 	mkdir -p bin
-	$(CC) $(SOURCES) -o $(TARGET) $(GSL_HEADERS) $(GSL_LDFLAGS) $(GSL_LDLIBS)
+	$(CC) $(HOST_SOURCES) $(CL_SOURCES) -o $@ -DUSE_OPENCL $(GSL_HEADERS) $(GSL_LDFLAGS) $(GSL_LDLIBS) $(AOCL_COMPILE_CONFIG) $(AOCL_LDFLAGS) $(AOCL_LDLIBS)
+	
+host: bin/$(HOST_TARGET)
+
+c_only: 
+	mkdir -p bin
+	$(CC) $(SOURCES) -o $@ $(GSL_HEADERS) $(GSL_LDFLAGS) $(GSL_LDLIBS)
 
 clean:
-	rm -rf $(TARGET)
+	rm -rf bin/$(HOST_TARGET)

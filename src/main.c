@@ -5,6 +5,9 @@
 #include "load_pgm.h"
 #include "util.h"
 
+#ifdef USE_OPENCL
+#include "reconstruction_cl.h"
+#endif
 
 int main() {
     static Parameters* p;
@@ -74,7 +77,12 @@ int main() {
     testLRPatched = divideToPatches(&testLR, 1, p, 'l');
 
     // reconstruction
+    #ifdef USE_OPENCL
+    testHRPatched = reconstruction_cl(testLRPatched, trainSetLRPatched, trainSetHRPatched, p);
+    #else
     testHRPatched = reconstruction(testLRPatched, trainSetLRPatched, trainSetHRPatched, p);
+    #endif
+
 
     printf("done resconstruction\n");
     fflush(stdout);
@@ -88,13 +96,13 @@ int main() {
     writePGM("testCombined.pgm", &(testRecombinedImage));
 
     //////////////// debug //////////////////
-    int j;
-    for(i=10; i<20; i++){
-        for(j=10; j<20; j++){
-            printf("\t%f", testRecombinedImage.matrix[i][j]);
-        }
-        printf("\n");
-    }
+//    int j;
+//    for(i=10; i<20; i++){
+//        for(j=10; j<20; j++){
+//            printf("\t%f", testRecombinedImage.matrix[i][j]);
+//        }
+//        printf("\n");
+//    }
 
 //    printf("\n");
 //    for(i=0; i<10; i++){

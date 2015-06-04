@@ -43,6 +43,7 @@ Parameters* setParameters();
 Patch * divideToPatches(PGMData *data, const int numImages, Parameters* p, const char mode);
 PGMData combinePatches(Patch* patches, Parameters* p);
 float * calcDistance(Patch* testLRPatched, Patch* trainLRPatched);
+int * sortDistIndex(float* dist, int numElements);
 
 Patch * reconstruction(Patch* testLRPatched, Patch* trainSetLR, Patch* trainSetHR, Parameters* p);
 

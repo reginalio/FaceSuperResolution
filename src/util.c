@@ -25,8 +25,8 @@ Parameters* setParameters(){
     p->hrOverlap = p->lrOverlap * p->ratio;
 
     p->numTrainImages = NUMTRAINIMAGES;
-    p->numTrainImagesToUse = 20;
-    p->method = 'i';
+    p->numTrainImagesToUse = 360;
+    p->method = 'a';
     p->maxiter = 30;        // max cg iterations
     return p;
 }
@@ -183,8 +183,7 @@ static int compareDist (const void *a, const void *b)
         return 1;
 }
 
-// based on http://phoxis.org/2012/07/12/get-sorted-index-orderting-of-an-array/
-int* sortDistIndex(float* dist, int numElements){
+int *sortDistIndex(float* dist, int numElements) {
     int *idx, i;
 
     idx = malloc(sizeof(int)*numElements);
@@ -478,6 +477,8 @@ Patch* reconstructionIterative(Patch* testLRPatched, Patch* trainLRPatched, Patc
 Patch *reconstruction(Patch* testLRPatched, Patch* trainSetLRPatched, Patch* trainSetHRPatched, Parameters* p) {
 
     Patch* testHRPatched;
+
+    printf("using basic c methods\n");
     if(p->method == 'a')
         testHRPatched = reconstructionAnalytic(testLRPatched, trainSetLRPatched, trainSetHRPatched, p);
     else if(p->method == 'i')
