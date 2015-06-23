@@ -21,9 +21,14 @@ bin/$(HOST_TARGET) :
 	
 host: bin/$(HOST_TARGET)
 
+host_fpga:
+	mkdir -p bin
+	$(CC) $(HOST_SOURCES) $(CL_SOURCES) -o bin/lcr_fpga -DUSE_OPENCL -DUSE_FPGA $(GSL_HEADERS) $(GSL_LDFLAGS) $(GSL_LDLIBS) $(AOCL_COMPILE_CONFIG) $(AOCL_LDFLAGS) $(AOCL_LDLIBS)
+
+
 c_only: 
 	mkdir -p bin
-	$(CC) $(SOURCES) -o bin/lcr_c $(GSL_HEADERS) $(GSL_LDFLAGS) $(GSL_LDLIBS)
+	$(CC) $(HOST_SOURCES) -o bin/lcr_c $(GSL_HEADERS) $(GSL_LDFLAGS) $(GSL_LDLIBS)
 	
 simulation: bin/$(HOST_TARGET)
 	$(AOC) -march=emulator src/$(TARGET).cl --board $(BOARD)

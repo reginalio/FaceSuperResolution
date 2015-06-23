@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include "cl_setup.h"
 #include "stdlib.h"
+#include "util.h"
 
-
-cl_platform_id setOpenCLPlatform() {
+cl_platform_id setOpenCLPlatform(void) {
 
     cl_int ret;
     printf("CL set platform\n");
@@ -29,6 +29,8 @@ cl_platform_id setOpenCLPlatform() {
         platform = platform_id[i];
         if (!strcmp(pbuff, "Altera Corporation")) { break; }
     }
+
+    free(platform_id);
 
     return platform;
 }
@@ -68,7 +70,24 @@ cl_program createOpenCLProgram(cl_context context, cl_device_id device){
     printf("CL create program\n");
 
     cl_int ret;
-    FILE *fp=fopen("lcr_kernel.aocx", "r");
+    char mm[3];
+    char n[3];
+    char clFilename[80];
+    #ifdef USE_FPGA
+    strcpy(clFilename, "fpga/lcr_");
+    #else
+    strcpy(clFilename, "simKernels/lcr_");
+    #endif
+    sprintf(mm, "%d", MM);
+    sprintf(n, "%d", N);
+    strcat(clFilename, mm);
+    strcat(clFilename, "_");
+    strcat(clFilename, n);
+    strcat(clFilename, ".aocx\0");
+
+    printf("opening kernel file %s \n", clFilename);
+
+    FILE *fp=fopen(clFilename, "r");
     char *binary_buf = (char *)malloc(100000000);
     size_t binary_size = fread(binary_buf, 1, 100000000, fp);
     fclose(fp);
@@ -78,6 +97,8 @@ cl_program createOpenCLProgram(cl_context context, cl_device_id device){
     ret = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
     assert(ret==CL_SUCCESS);
 
+    printf("lalala\n");
+//    free(binary_buf);
     return program;
 }
 

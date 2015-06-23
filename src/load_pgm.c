@@ -9,7 +9,6 @@
 #include <string.h>
 #include "load_pgm.h"
 
-#define HI(num) (((num) & 0x0000FF00) >> 8)
 #define LO(num) ((num) & 0x000000FF)
 
 int **allocate_dynamic_matrix(int row, int col) {
@@ -123,8 +122,8 @@ void readPGM(const char *file_name, PGMData *data) {
     int i, j;
     int lo, hi;
 
-    printf("reading %s\n", file_name );
-    fflush(stdout);
+//    printf("reading %s\n", file_name );
+//    fflush(stdout);
     pgmFile = fopen(file_name, "rb");
     if (pgmFile == NULL) {
         perror("cannot open file to read");

@@ -9,25 +9,30 @@
 #include "util.h"
 #include "cg.h"
 #include <gsl/gsl_linalg.h>
+#include <time.h>
 
+
+const char *method = "a";
+
+//TODO convert p->stuff to defined stuff
 Parameters* setParameters(){
     Parameters* p;
     p = malloc(sizeof(Parameters));
 
-    p->ratio = 4;
-    p->tau = 0.04;
+    p->ratio = RATIO;
+    p->tau = TAU;
 
-    p->lrWidth = 15;
-    p->lrPatchWidth = 4;
-    p->lrOverlap = 2;
+    p->lrWidth = LRWIDTH;
+    p->lrPatchWidth = LRPW;
+    p->lrOverlap = LRO;
     p->hrWidth = p->lrWidth * p->ratio;
     p->hrPatchWidth = p->lrPatchWidth * p->ratio;
     p->hrOverlap = p->lrOverlap * p->ratio;
 
     p->numTrainImages = NUMTRAINIMAGES;
-    p->numTrainImagesToUse = 360;
+    p->numTrainImagesToUse = MM;
     p->method = 'a';
-    p->maxiter = 30;        // max cg iterations
+    p->maxiter = MAXITER;        // max cg iterations
     return p;
 }
 
@@ -133,16 +138,22 @@ PGMData combinePatches(Patch* patches, Parameters* p) {
         }
     }
 
-    for(j=0; j<width; j++)
-        for(i=0; i<width; i++){
-            xHRmatrix[i][j] = xHRmatrix[i][j]/counter[i][j];
+    for (i = 0; i < width; i++) {
+        for(j = 0; j < width; j++) {
+            xHRmatrix[i][j] = xHRmatrix[i][j] / counter[i][j];
+            if(xHRmatrix[i][j]>1)
+                xHRmatrix[i][j] = 1;
+            else if(xHRmatrix[i][j]<0)
+                xHRmatrix[i][j] = 0;
         }
+    }
 
     xHR.matrix = xHRmatrix;
     xHR.col = width;
     xHR.row = width;
     xHR.max_gray = 255;
 
+    deallocate_dynamic_matrix(counter, width);
     return xHR;
 }
 
@@ -203,7 +214,7 @@ int *sortDistIndex(float* dist, int numElements) {
 }
 
 Patch* reconstructionAnalytic(Patch* testLRPatched, Patch* trainLRPatched, Patch* trainHRPatched, Parameters* p){
-    printf("start - reconstruction analytic\n");
+//    printf("start - reconstruction analytic\n");
     assert(p->numTrainImagesToUse<=p->numTrainImages);
     int numPatch = testLRPatched->numPatchX * testLRPatched->numPatchX;
 
@@ -219,12 +230,11 @@ Patch* reconstructionAnalytic(Patch* testLRPatched, Patch* trainLRPatched, Patch
 
     for(patch=0; patch < numPatch; patch++){
 
-        printf("reconstructing patch %d\n", patch);
+        //printf("reconstructing patch %d\n", patch);
         testHRPatched[patch].matrix = allocate_dynamic_matrix_float(testLRPatched->row, hrPW*hrPW );
         testHRPatched[patch].col = trainHRPatched->col;
         testHRPatched[patch].row = testLRPatched->row;
         testHRPatched[patch].numPatchX = testLRPatched->numPatchX;
-        printf("here? \n");
 
         // get distance between xLR(patch) and all yLR(patch)
         float* dist;        // size all_Y
@@ -249,6 +259,9 @@ Patch* reconstructionAnalytic(Patch* testLRPatched, Patch* trainLRPatched, Patch
 //        }
 //        fflush(stdout);
 
+        clock_t start, end;
+        double covTime, choleskyTime;
+        start = clock();
 
         // loop over the closest `numTrainImagesToUse' trainLR
         for(i=0; i<testLRPatched->col; i++) {
@@ -256,9 +269,6 @@ Patch* reconstructionAnalytic(Patch* testLRPatched, Patch* trainLRPatched, Patch
                 C[i][j] = testLRPatched[patch].matrix[0][i] - trainLRPatched[patch].matrix[idx[j]][i];
             }
         }
-
-        printf("reconstruction 2\n");
-        fflush(stdout);
 
 
         for(i=0; i<p->numTrainImagesToUse; i++) {
@@ -274,8 +284,11 @@ Patch* reconstructionAnalytic(Patch* testLRPatched, Patch* trainLRPatched, Patch
                 }
             }
         }
-        printf("reconstruction 3\n");
-        fflush(stdout);
+
+        end = clock();
+        covTime = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+        start = clock();
         ////////////////////// GSL stuff to solve Ax=b ////////////////////////
         // http://stackoverflow.com/questions/7949229/how-to-implement-a-left-matrix-division-on-c-using-gsl
         double* ones = malloc(sizeof(double)*p->numTrainImagesToUse);
@@ -314,22 +327,12 @@ Patch* reconstructionAnalytic(Patch* testLRPatched, Patch* trainLRPatched, Patch
         //////////////////// construct HR patch /////////////////////////////////
         for(j=0;j<p->numTrainImagesToUse;j++){
             for(i=0;i<testHRPatched->col;i++){
-                //printf ("testHRPatched[%d].matrix[0][%d] = %f\n", patch, i, testHRPatched[patch].matrix[0][i]);
                 testHRPatched[patch].matrix[0][i] += (x_data[j]/sum_x)*trainHRPatched[patch].matrix[idx[j]][i];
-                if(testHRPatched[patch].matrix[0][i]>1)
-                    testHRPatched[patch].matrix[0][i] = 1;
-                else if(testHRPatched[patch].matrix[0][i]<0)
-                    testHRPatched[patch].matrix[0][i] = 0;
             }
         }
 
 
-
-        printf("reconstructingggg\n");
-        fflush(stdout);
-
         // free allocated memory
-
         //gsl_vector_free (x);
         free(ones);
         free(x_data);
@@ -397,9 +400,6 @@ Patch* reconstructionIterative(Patch* testLRPatched, Patch* trainLRPatched, Patc
             }
         }
 
-        printf("reconstruction 2\n");
-        fflush(stdout);
-
 
         for(i=0; i<p->numTrainImages; i++) {
             for(j =0; j <p->numTrainImages; j++) {
@@ -413,8 +413,7 @@ Patch* reconstructionIterative(Patch* testLRPatched, Patch* trainLRPatched, Patc
                 }
             }
         }
-        printf("reconstruction 3\n");
-        fflush(stdout);
+
         ////////////////////// solve Gx=ones(M,1) by iterative CG ////////////////////////
         // https://github.com/vasia/Conjugate-Gradient-C-implementation
         double *Mdata   = calloc(p->numTrainImages, sizeof(double));
@@ -434,17 +433,12 @@ Patch* reconstructionIterative(Patch* testLRPatched, Patch* trainLRPatched, Patc
         //////////////////// construct HR patch /////////////////////////////////
         double sum_x = 0.0;
         for(i=0; i<p->numTrainImages; i++){
-//            printf("x[%d]: %f\n", i, x[i]);
             sum_x += x[i];
 
         }
 
-        printf("here\n");
-        fflush(stdout);
-
         for(j=0;j<p->numTrainImages;j++){
             for(i=0;i<testHRPatched->col;i++){
-                //printf ("testHRPatched[%d].matrix[0][%d] = %f\n", patch, i, testHRPatched[patch].matrix[0][i]);
                 testHRPatched[patch].matrix[0][i] += (x[j]/sum_x)*trainHRPatched[patch].matrix[idx[j]][i];
                 if(testHRPatched[patch].matrix[0][i]>1)
                     testHRPatched[patch].matrix[0][i] = 1;
@@ -453,13 +447,7 @@ Patch* reconstructionIterative(Patch* testLRPatched, Patch* trainLRPatched, Patc
             }
         }
 
-
-
-        printf("reconstructingggg\n");
-        fflush(stdout);
-
         // free allocated memory
-
         //gsl_vector_free (x);
         free(Mdata);
         free(ones);
@@ -490,3 +478,4 @@ Patch *reconstruction(Patch* testLRPatched, Patch* trainSetLRPatched, Patch* tra
 
     return testHRPatched;
 }
+

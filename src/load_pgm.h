@@ -16,6 +16,7 @@ int ** allocate_dynamic_matrix(int row, int col);
 float ** allocate_dynamic_matrix_float(int row, int col);
 double ** allocate_dynamic_matrix_double(int row, int col);
 
+void deallocate_dynamic_matrix(int **matrix, int row);
 void deallocate_dynamic_matrix_float(float **matrix, int row);
 void deallocate_dynamic_matrix_double(double **matrix, int row);
 

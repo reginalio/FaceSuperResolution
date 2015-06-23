@@ -5,10 +5,34 @@
 #ifndef FYP_UTIL_H
 #define FYP_UTIL_H
 
-
 #include "load_pgm.h"
 
 #define NUMTRAINIMAGES 360
+
+#ifndef MM
+    #define MM 30        // number of training images to use in reconstruction
+#endif
+
+#ifndef LRWIDTH
+    #define LRWIDTH 15
+#endif
+#ifndef LRPW
+    #define LRPW 4
+#endif
+#ifndef LRO
+    #define LRO 1
+#endif
+#ifndef N
+    #define N 16     // number of pixels in an LR patch
+#endif
+
+#define RATIO 4
+#define TAU 0.04
+#define MAXITER 10
+
+#ifndef NUMTESTFACE
+#define NUMTESTFACE 40
+#endif
 
 typedef struct _Parameters {
     int ratio;
