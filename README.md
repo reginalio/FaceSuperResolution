@@ -5,6 +5,8 @@ Face super-resolution with LcR algorithm in C and OpenCL
 This repository contains the C and OpenCL code for a face super-resolution algorithm called LcR proposed by Junjun Jiang, Ruimin Hu, Zhongyuan Wang, Zhen Han. Noise Robust Face Hallucination via
 Locality-Constrained Representation. Multimedia, IEEE Transactions on 2014;16(5) 1268-1281.
 
+The dataset has not been included in this repository.
+
 ### Makefile command for different compilation purposes
 make host_fpga: compile host that launches kernels onto FPGA
 
